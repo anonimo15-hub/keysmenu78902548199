@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Painel de Keys</title>
+
+<style>
+body{
+background:#0b0b0f;
+color:white;
+font-family:Arial;
+margin:0;
+}
+
+header{
+background:#6a00ff;
+padding:15px;
+text-align:center;
+font-size:22px;
+font-weight:bold;
+}
+
+.container{
+width:700px;
+margin:auto;
+margin-top:30px;
+background:#121218;
+padding:25px;
+border-radius:10px;
+}
+
+.controls{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+flex-wrap:wrap;
+}
+
+select,input{
+padding:10px;
+background:#1b1b25;
+border:none;
+color:white;
+border-radius:5px;
+}
+
+button{
+padding:10px 15px;
+background:#7b00ff;
+border:none;
+color:white;
+border-radius:5px;
+cursor:pointer;
+font-weight:bold;
+}
+
+button:hover{
+background:#9a33ff;
+}
+
+.key{
+background:#1a1a22;
+padding:12px;
+border-radius:6px;
+margin-bottom:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.key span{
+font-weight:bold;
+}
+
+.small{
+font-size:12px;
+opacity:0.8;
+}
+
+.actions button{
+margin-left:5px;
+background:#444;
+}
+
+.actions button:hover{
+background:#666;
+}
+
+.stats{
+margin-top:10px;
+font-size:14px;
+opacity:0.8;
+}
+</style>
+
+</head>
+
+<body>
+
+<header>Painel de Keys</header>
+
+<div class="container">
+
+<div class="controls">
+
+<select id="tempo">
+<option value="86400">24 Horas</option>
+<option value="86400">1 Dia</option>
+<option value="259200">3 Dias</option>
+<option value="280800">78 Horas</option>
+<option value="604800">7 Dias</option>
+<option value="1209600">14 Dias</option>
+<option value="2592000">30 Dias</option>
+</select>
+
+<button onclick="gerar()">Gerar Key</button>
+
+<input placeholder="Buscar key..." id="buscar" oninput="mostrar()">
+
+<button onclick="limpar()">Limpar Tudo</button>
+
+</div>
+
+<div id="lista"></div>
+
+<div class="stats" id="stats"></div>
+
+</div>
+
+<script>
+
+let keys = JSON.parse(localStorage.getItem("keys") || "[]")
+
+function salvar(){
+localStorage.setItem("keys",JSON.stringify(keys))
+}
+
+function randomPart(){
+let chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+let r=""
+for(let i=0;i<4;i++){
+r+=chars[Math.floor(Math.random()*chars.length)]
+}
+return r
+}
+
+function gerar(){
+let key="MENU-"+randomPart()+"-"+randomPart()
+let tempo=document.getElementById("tempo").value
+let expira=Date.now()+tempo*1000
+
+keys.push({
+key:key,
+expira:expira,
+used:false
+})
+
+salvar()
+mostrar()
+}
+
+function copiar(k){
+navigator.clipboard.writeText(k)
+alert("Key copiada!")
+}
+
+function deletar(i){
+keys.splice(i,1)
+salvar()
+mostrar()
+}
+
+function limpar(){
+if(confirm("Apagar todas as keys?")){
+keys=[]
+salvar()
+mostrar()
+}
+}
+
+function tempoRestante(t){
+
+let r=Math.floor((t-Date.now())/1000)
+
+if(r<=0) return "Expirada"
+
+let dias=Math.floor(r/86400)
+let horas=Math.floor((r%86400)/3600)
+let minutos=Math.floor((r%3600)/60)
+
+return dias+"d "+horas+"h "+minutos+"m"
+
+}
+
+function mostrar(){
+
+let lista=document.getElementById("lista")
+let busca=document.getElementById("buscar").value.toLowerCase()
+
+lista.innerHTML=""
+
+let total=0
+
+keys.forEach((k,i)=>{
+
+if(!k.key.toLowerCase().includes(busca)) return
+
+total++
+
+let div=document.createElement("div")
+div.className="key"
+
+div.innerHTML=`
+<div>
+<span>${k.key}</span><br>
+<div class="small">Expira em: ${tempoRestante(k.expira)}</div>
+</div>
+
+<div class="actions">
+<button onclick="copiar('${k.key}')">Copiar</button>
+<button onclick="deletar(${i})">Deletar</button>
+</div>
+`
+
+lista.appendChild(div)
+
+})
+
+document.getElementById("stats").innerText="Total de keys: "+total
+
+}
+
+mostrar()
+
+</script>
+
+</body>
+</html>
